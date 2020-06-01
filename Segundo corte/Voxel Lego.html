@@ -1,0 +1,567 @@
+ <!DOCTYPE html>
+<html>
+  <head>
+    <title>Lego</title>
+    <style>
+      html, body { margin: 0; padding: 0; overflow: hidden; }
+    </style>
+  </head>
+  
+  
+  <body>
+
+    <script src="js/three.min.js"></script>
+	<script src="js/controls/OrbitControls.js"></script>
+	<script src="js/csg.js"></script>
+	<script src="js/THREE.CSG.js"></script>
+    <script>
+		//Pulse 'z', 'x' y 'c' para ver las instrucciones
+			var x = new THREE.Vector3( 1, 0, 0 );
+			var y = new THREE.Vector3( 0, 1, 0 );
+			var z = new THREE.Vector3( 0, 0, 1 );	
+			var camera, scene, renderer, controls;
+			var plane;
+			var mouse, raycaster, isShiftDown = false;
+			var LegoSimpleRes;
+			var rollOverMesh, rollOverMaterial;
+			var cubeMateria;
+			var objects = [];
+			var cubeMaterial = new THREE.MeshStandardMaterial( {color: 0x00FF00});
+			var cilinderMaterial = new THREE.MeshStandardMaterial( { color: 0x00FF00, opacity: 0.8, transparent: true} );		
+			var floorMaterial;
+			var ficha = 0;
+			var rot = 0;
+			var rotcon = 0;
+			var rollOverGeo;
+			var tx=0, tz=0;
+			var LegoSimpleGeo1 = new THREE.BoxBufferGeometry( 50, 50, 50 );	
+			var LegoSimpleGeo2 = new THREE.CylinderGeometry( 5, 12, 10, 20 );	
+			
+			var inicio=Math.floor(Math.random() * 8); 
+			
+			
+			switch(inicio){
+				case 0:
+				floorMaterial = new THREE.MeshStandardMaterial( { color: 0x00FF00, opacity: 0.8, transparent: true} );
+				break;
+				case 1:
+				floorMaterial = new THREE.MeshStandardMaterial( { color: 0x00FFFF, opacity: 0.8, transparent: true} );
+				break;
+				case 2:
+				floorMaterial = new THREE.MeshStandardMaterial( { color: 0xFFFF00, opacity: 0.8, transparent: true} );
+				break;
+				case 3:
+				floorMaterial = new THREE.MeshStandardMaterial( { color: 0xFA5858, opacity: 0.8, transparent: true} );
+				break;
+				case 4:
+				floorMaterial = new THREE.MeshStandardMaterial( { color: 0x5882FA, opacity: 0.8, transparent: true} );
+				break;
+				case 5:
+				floorMaterial = new THREE.MeshStandardMaterial( { color: 0xFE9A2E, opacity: 0.8, transparent: true} );
+				break;
+				case 6:
+				floorMaterial = new THREE.MeshStandardMaterial( { color: 0x8000FF, opacity: 0.8, transparent: true} );
+				break;
+				case 7:
+				floorMaterial = new THREE.MeshStandardMaterial( { color: 0xFF00FF, opacity: 0.8, transparent: true} );
+				break;
+				case 8:
+				floorMaterial = new THREE.MeshStandardMaterial( { color: 0xE6E6E6, opacity: 0.8, transparent: true} );
+				break;
+			}
+			
+			
+			
+			
+			var LegoDobleGeo1 = new THREE.BoxBufferGeometry( 100, 50, 50 );	
+
+			var PuntosTecho = new THREE.Shape();
+			
+			PuntosTecho.moveTo( 0,0 );
+			PuntosTecho.lineTo(-50,0);
+			PuntosTecho.lineTo(-50,25);
+			PuntosTecho.lineTo(-25,50);
+			PuntosTecho.lineTo(0,50);
+			PuntosTecho.lineTo(0,0);
+			
+			var extrudeSettings = {
+			steps: 1,
+			depth: 0,
+			bevelEnabled:false
+			};
+			
+			var PuntosInverso = new THREE.Shape();
+			
+			PuntosInverso.moveTo( 0,0 );
+			PuntosInverso.lineTo(-25,0);
+			PuntosInverso.lineTo(-25,12.5);
+			PuntosInverso.lineTo(-50,37.5);
+			PuntosInverso.lineTo(-50,50);
+			PuntosInverso.lineTo(0,50);
+			PuntosInverso.lineTo(0,0);
+			
+			var extrudeSettings = {
+			steps: 1,
+			depth: 0,
+			bevelEnabled:false
+			};	
+			
+			var LegoTechoGeo1 = new THREE.ExtrudeGeometry( PuntosTecho, extrudeSettings );
+			var LegoTechoGeo2 = new THREE.ExtrudeGeometry( PuntosTecho, extrudeSettings );
+			var LegoInversoGeo = new THREE.ExtrudeGeometry( PuntosInverso, extrudeSettings );
+			LegoTechoGeo1.scale(1,1,0.5);
+			LegoInversoGeo.scale(1,1,0.5);
+			
+			var LegoCircleGeo = new THREE.CylinderGeometry( 25, 25, 50, 8 );	
+			
+			init();
+			render();
+
+				
+			function init() {
+		
+	
+		var onKeyDown = function ( event ) {
+				switch ( event.keyCode ) {
+					case 67:
+						window.alert("Color: 0-Verde, 1-Azul, 2-Amarillo, 3-Rojo, 4-Azul Oscuro, 5-Negro, 6-Naranja, 7-Morado, 8-Rosa, 9-Blanco");
+						break;
+					case 88:
+						window.alert("Direccion: A-Izquierda, S-Abajo, D-Derecha, W-Arribaz");
+						break;
+					case 90:
+						window.alert("Ficha: J-Cubo, K-Techo, L-Techo Inverso, I-Cilindro");
+						break;				
+					case 48:
+						cubeMaterial = new THREE.MeshStandardMaterial( { color: 0x00FF00} );
+						cilinderMaterial = new THREE.MeshStandardMaterial( { color: 0x00FF00, opacity: 0.8, transparent: true} );
+						break;
+					case 49:
+						cubeMaterial = new THREE.MeshStandardMaterial( { color: 0x00FFFF} );
+						cilinderMaterial = new THREE.MeshStandardMaterial( { color: 0x00FFFF, opacity: 0.8, transparent: true} );
+						break;
+					case 50:
+						cubeMaterial = new THREE.MeshStandardMaterial( { color: 0xFFFF00} );
+						cilinderMaterial = new THREE.MeshStandardMaterial( { color: 0xFFFF00, opacity: 0.8, transparent: true} );
+						break;
+					case 51:
+						cubeMaterial = new THREE.MeshStandardMaterial( { color: 0xFA5858} );
+						cilinderMaterial = new THREE.MeshStandardMaterial( { color: 0xFA5858, opacity: 0.8, transparent: true} );
+						break;	
+					case 52:
+						cubeMaterial = new THREE.MeshStandardMaterial( { color: 0x5882FA} );
+						cilinderMaterial = new THREE.MeshStandardMaterial( { color: 0x5882FA, opacity: 0.8, transparent: true} );
+						break;	
+					case 53:
+						cubeMaterial = new THREE.MeshStandardMaterial( { color: 0x848484} );
+						cilinderMaterial = new THREE.MeshStandardMaterial( { color: 0x848484, opacity: 0.8, transparent: true} );
+						break;	
+					case 54:
+						cubeMaterial = new THREE.MeshStandardMaterial( { color: 0xFE9A2E} );
+						cilinderMaterial = new THREE.MeshStandardMaterial( { color: 0xFE9A2E, opacity: 0.8, transparent: true} );
+						break;		
+					case 55:
+						cubeMaterial = new THREE.MeshStandardMaterial( { color: 0x8000FF} );
+						cilinderMaterial = new THREE.MeshStandardMaterial( { color: 0x8000FF, opacity: 0.8, transparent: true} );
+						break;	
+					case 56:
+						cubeMaterial = new THREE.MeshStandardMaterial( { color: 0xFF00FF} );
+						cilinderMaterial = new THREE.MeshStandardMaterial( { color: 0xFF00FF, opacity: 0.8, transparent: true} );
+						break;	
+					case 57:
+						cubeMaterial = new THREE.MeshStandardMaterial( { color: 0xE6E6E6} );
+						cilinderMaterial = new THREE.MeshStandardMaterial( { color: 0xE6E6E6, opacity: 0.8, transparent: true} );
+						break;							
+					case 74:
+						ficha=0;
+						break;	
+					case 75:
+						ficha=1;
+						break;
+					case 76:
+						ficha=2;
+						break;
+					case 73:
+						ficha=3;
+						break;
+					case 85:
+						ficha=4;
+						break;
+					case 79:
+						ficha=5;
+						break;	
+					case 83:					
+						rot=0;
+						tx=0;
+						tz=0;	
+						break;
+					case 68:					
+						rot=90;
+						tx=0;
+						tz=-50;	
+						break;							
+					case 87:					
+						rot=180;
+						tx=50;
+						tz=-50;	
+						break;
+					case 65:					
+						rot=270;
+						tx=50;
+						tz=0;	
+						break;
+						};
+			}
+			document.addEventListener( 'keydown', onKeyDown, false );
+		
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 10000 );
+				camera.position.set( 800, 1000, 1900 );
+				camera.lookAt( 0, 0, 0 );
+
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0xF3F781 );
+
+				// roll-over helpers
+
+				//scene.add( mesh );
+				
+				rollOverMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );			
+						rollOverGeo = new THREE.BoxBufferGeometry( 5, 5, 5 );
+						rollOverMesh = new THREE.Mesh( rollOverGeo, rollOverMaterial );
+						scene.add( rollOverMesh );
+
+				
+
+				// grid
+
+				var gridHelper = new THREE.GridHelper( 1500, 30 );
+				scene.add( gridHelper );
+
+				//
+
+				raycaster = new THREE.Raycaster();
+				mouse = new THREE.Vector2();
+
+				var geometry = new THREE.PlaneBufferGeometry( 1500, 1500 );
+				geometry.rotateX( - Math.PI / 2 );
+
+				plane = new THREE.Mesh( geometry, new THREE.MeshBasicMaterial( { visible: false } ) );
+				scene.add( plane );
+
+				objects.push( plane );
+
+				// lights
+
+				var ambientLight = new THREE.AmbientLight( 0x606060 );
+				scene.add( ambientLight );
+
+				var directionalLight = new THREE.DirectionalLight( 0xffffff );
+				directionalLight.position.set( 1, 0.75, 0.5 ).normalize();
+				scene.add( directionalLight );
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );
+
+				document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+				document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+				document.addEventListener( 'keydown', onDocumentKeyDown, false );
+				document.addEventListener( 'keyup', onDocumentKeyUp, false );
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize, false );
+				
+				document.body.appendChild( renderer.domElement );
+				controls = new THREE.OrbitControls( camera, renderer.domElement );
+				
+		var basegeo = new THREE.BoxGeometry( 1500, 5, 1500 );	
+		var base = new THREE.Mesh(basegeo, floorMaterial);
+		scene.add(base);	
+				scene.write('texto');					
+
+				
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function onDocumentMouseMove( event ) {
+
+				event.preventDefault();
+
+				mouse.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
+
+				raycaster.setFromCamera( mouse, camera );
+
+				var intersects = raycaster.intersectObjects( objects );
+
+				if ( intersects.length > 0 ) {
+
+					var intersect = intersects[ 0 ];
+
+					rollOverMesh.position.copy( intersect.point ).add( intersect.face.normal );
+					rollOverMesh.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+
+				}
+
+				render();
+
+			}
+
+			function onDocumentMouseDown( event ) {
+
+				event.preventDefault();
+
+				mouse.set( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 );
+
+				raycaster.setFromCamera( mouse, camera );
+
+				var intersects = raycaster.intersectObjects( objects );
+
+				if ( intersects.length > 0 ) {
+
+					var intersect = intersects[ 0 ];
+
+					// delete cube
+
+					if ( isShiftDown ) {
+
+						if ( intersect.object !== plane) {
+							
+							scene.remove( intersect.object );
+							scene.remove( objects[objects.indexOf( intersect.object )-1] );
+							scene.remove( objects[objects.indexOf( intersect.object )+1] );
+							objects.splice( objects.indexOf( intersect.object ), 1 );
+
+						}
+
+						// create cube
+
+					} else {
+					
+					
+					switch ( ficha ) {
+					case 0:
+						var voxel = new THREE.Mesh( LegoSimpleGeo1, cubeMaterial );
+						var voxel2 = new THREE.Mesh( LegoSimpleGeo2 , cubeMaterial );
+						var voxel3 = new THREE.Mesh( LegoSimpleGeo2, cubeMaterial );
+						voxel.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+						voxel2.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel2.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+						voxel3.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel3.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+						scene.add( voxel );
+						scene.add( voxel2 );			
+						voxel2.translateY(30); 
+						objects.push( voxel );
+						objects.push( voxel2 );
+						objects.push( voxel3 );
+						break;
+						
+					case 1:
+						var voxel = new THREE.Mesh( LegoSimpleGeo2, cubeMaterial );
+						var voxel2 = new THREE.Mesh( LegoTechoGeo1 , cubeMaterial );
+						var voxel3 = new THREE.Mesh( LegoSimpleGeo2, cubeMaterial );
+						
+						voxel.rotateOnWorldAxis( y, THREE.Math.degToRad(rot) );
+						voxel2.rotateOnWorldAxis( y, THREE.Math.degToRad(rot) );
+						
+						voxel.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );	
+						voxel.rotateOnWorldAxis( y, THREE.Math.degToRad(90) );
+						
+						voxel2.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel2.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 0 );
+						voxel2.rotateOnWorldAxis( y, THREE.Math.degToRad(90) );
+						
+						voxel3.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel3.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+
+						
+						voxel2.translateX(tx);
+						voxel2.translateZ(tz);
+						
+						scene.add( voxel );
+						scene.add( voxel2 );			
+						voxel.translateY(30); 	
+						voxel.translateX(13);						
+						objects.push( voxel );
+						objects.push( voxel2 );
+						objects.push( voxel3 );
+						break;
+
+					case 2:
+						var voxel = new THREE.Mesh( LegoSimpleGeo2, cubeMaterial );
+						var voxel2 = new THREE.Mesh( LegoInversoGeo , cubeMaterial );
+						var voxel3 = new THREE.Mesh( LegoSimpleGeo2, cubeMaterial );
+						
+						voxel.rotateOnWorldAxis( y, THREE.Math.degToRad(rot) );
+						voxel2.rotateOnWorldAxis( y, THREE.Math.degToRad(rot) );
+						
+						voxel.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );	
+						voxel.rotateOnWorldAxis( y, THREE.Math.degToRad(90) );
+						
+						voxel2.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel2.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 0 );
+						voxel2.rotateOnWorldAxis( y, THREE.Math.degToRad(90) );
+						
+						voxel3.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel3.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+
+						
+						voxel2.translateX(tx);
+						voxel2.translateZ(tz);
+						
+						scene.add( voxel );
+						scene.add( voxel2 );			
+						voxel.translateY(30); 	
+						voxel.translateX(13);						
+						objects.push( voxel );
+						objects.push( voxel2 );
+						objects.push( voxel3 );
+						break;	
+
+					case 3:
+						var voxel = new THREE.Mesh( LegoSimpleGeo2, cilinderMaterial );
+						var voxel2 = new THREE.Mesh( LegoCircleGeo , cilinderMaterial );
+						var voxel3 = new THREE.Mesh( LegoSimpleGeo2, cilinderMaterial );
+						
+						voxel.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );	
+						voxel.rotateOnWorldAxis( y, THREE.Math.degToRad(90) );
+						
+						voxel2.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel2.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 0 );
+						voxel2.rotateOnWorldAxis( y, THREE.Math.degToRad(90) );
+						
+						voxel3.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel3.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+
+						
+						voxel2.translateX(-25);
+						voxel2.translateZ(25);
+						voxel2.translateY(25);
+						
+						scene.add( voxel );
+						scene.add( voxel2 );			
+						voxel.translateY(30); 	
+					
+						objects.push( voxel );
+						objects.push( voxel2 );
+						objects.push( voxel3 );
+						break;							
+
+					case 4:	
+						var voxel = new THREE.Mesh( LegoSimpleGeo2, cubeMaterial );
+						var voxel2 = new THREE.Mesh( LegoDobleGeo1, cubeMaterial );
+						var voxel3 = new THREE.Mesh( LegoSimpleGeo2, cubeMaterial );
+						
+						voxel3.rotateOnWorldAxis( y, THREE.Math.degToRad(rot) );
+						voxel2.rotateOnWorldAxis( y, THREE.Math.degToRad(rot) );
+						
+						voxel.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+						voxel2.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel2.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+						voxel3.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel3.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+						
+						scene.add( voxel );
+						scene.add( voxel2 );
+						scene.add( voxel3 );
+						voxel.translateY(30); 
+						voxel2.translateX(25);
+						voxel3.translateY(30);
+						voxel3.translateX(50);
+						objects.push( voxel );
+						objects.push( voxel2 );
+						objects.push( voxel3 );
+						break;
+						
+					case 5:
+						var voxel = new THREE.Mesh( LegoSimpleGeo2, cubeMaterial );
+						var voxel2 = new THREE.Mesh( LegoTechoGeo2 , cubeMaterial );
+						var voxel3 = new THREE.Mesh( LegoSimpleGeo2, cubeMaterial );
+						
+
+						
+						voxel.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+						voxel.rotateOnWorldAxis( y, THREE.Math.degToRad(90) );
+						
+						voxel2.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel2.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 0 );
+						voxel2.rotateOnWorldAxis( y, THREE.Math.degToRad(90) );
+						
+						voxel3.position.copy( intersect.point ).add( intersect.face.normal );
+						voxel3.position.divideScalar( 50 ).floor().multiplyScalar( 50 ).addScalar( 25 );
+						voxel3.rotateOnWorldAxis( y, THREE.Math.degToRad(90) );
+						
+						scene.add( voxel );
+						scene.add( voxel2 );
+						scene.add( voxel3 );
+												
+						voxel.translateY(30);
+						voxel.translateX(13);
+												
+						voxel3.translateY(30);
+						voxel3.translateX(13);
+						voxel3.translateZ(50);
+						
+						
+						objects.push( voxel );
+						objects.push( voxel2 );
+						objects.push( voxel3 );
+						break;	
+
+						
+						}
+					
+					}
+					render();
+
+				}
+
+			}
+
+			function onDocumentKeyDown( event ) {
+
+				switch ( event.keyCode ) {
+
+					case 16: isShiftDown = true; break;
+					
+
+				}
+
+			}
+
+			function onDocumentKeyUp( event ) {
+
+				switch ( event.keyCode ) {
+
+					case 16: isShiftDown = false; break;
+
+				}
+
+			}
+
+			function render() {
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+
+	</body>
+</html>

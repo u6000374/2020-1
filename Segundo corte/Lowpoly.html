@@ -1,0 +1,794 @@
+ <!DOCTYPE html>
+<html>
+  <head>
+    <title>Ejercicio Cara</title>
+    <style>
+      html, body { margin: 0; padding: 0; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <script src="js/three.js"></script>
+	<script src="js/controls/OrbitControls.js"></script>
+    <script>
+		var scene, aspect, camera, renderer, controls;
+		var startTime = Date.now();
+		var fan = new Array(10);
+		var strip = new Array(10);
+		var tapa;
+		
+		class TRIANGLE_FAN{	
+		  constructor( Geometria, Material ){
+		    this.geometria = Geometria;
+			this.material = Material;
+		  }  
+		  draw(){			
+			for( var i=2; i<this.geometria.vertices.length; i++ ){
+			  this.geometria.faces.push( new THREE.Face3(0,i-1,i) );
+			}
+			this.geometria.computeFaceNormals();
+			var fan = new THREE.Mesh( this.geometria, this.material );
+			scene.add( fan );
+		  }
+		}
+		
+		class TRIANGLE_STRIP{	
+		  constructor( Geometria, Material ){
+		    this.geometria = Geometria;
+			this.material = Material;	
+		  }  
+		  draw(){			
+			for( var i=2; i<this.geometria.vertices.length; i++ ){
+			if(i%2!=0)
+			  this.geometria.faces.push( new THREE.Face3(i-2,i-1,i) );
+			else
+			  this.geometria.faces.push( new THREE.Face3(i-1,i-2,i) );
+			}
+			this.geometria.computeFaceNormals();
+			
+			var strip = new THREE.Mesh( this.geometria, this.material);
+			scene.add( strip );
+		  }
+		}
+	
+
+		
+		init();
+		animate();
+	
+		function init(){
+			scene = new THREE.Scene();
+			aspect = window.innerWidth / window.innerHeight;
+			camera = new THREE.PerspectiveCamera( 45, aspect, 0.1, 1000);
+			renderer = new THREE.WebGLRenderer();
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			document.body.appendChild( renderer.domElement );
+			controls = new THREE.OrbitControls( camera, renderer.domElement );
+            				  
+			var size = 10;
+			var arrowSize = 1;
+			var divisions = size;
+			var origin = new THREE.Vector3( 0, 0, 0 );
+			var x = new THREE.Vector3( 1, 0, 0 );
+			var y = new THREE.Vector3( 0, 1, 0 );
+		  	var z = new THREE.Vector3( 0, 0, 1 );
+			var color1 = new THREE.Color( 0xFFFFFF );
+		  	var color2 = new THREE.Color( 0x333333 );
+		  	var colorR = new THREE.Color( 0xAA3333 );
+		  	var colorG = new THREE.Color( 0x33AA33 );
+		  	var colorB = new THREE.Color( 0x333366 );
+		  
+		  	//CREAR LAS GRILLAS PARA EL ESCENARIO
+		  	var axesHelper = new THREE.AxesHelper( size );
+		  	var gridHelperXY = new THREE.GridHelper( size, divisions, color1, color1);
+		  	var gridHelperXZ = new THREE.GridHelper( size, divisions, color2, color2 );
+		  	var gridHelperYZ = new THREE.GridHelper( size, divisions, color2, color2 );
+            
+            //ROTARLAS PARA QUE QUEDEN EN EL ESPACIO ADECUADO
+            gridHelperXY.rotateOnWorldAxis ( x, THREE.Math.degToRad(90) );
+            gridHelperXZ.rotateOnWorldAxis ( y, THREE.Math.degToRad(90) );
+            gridHelperYZ.rotateOnWorldAxis ( z, THREE.Math.degToRad(90) );
+            
+            //CREAR LAS FLECHAS QUE INDICAN LOS EJES DE COORDENADAS 3D
+            var arrowX = new THREE.ArrowHelper( x, origin, arrowSize, colorR );
+            var arrowY = new THREE.ArrowHelper( y, origin, arrowSize, colorG );
+            var arrowZ = new THREE.ArrowHelper( z, origin, arrowSize, colorB );
+			
+			//CREAR ILUMINACIÓN
+            var ambient = new THREE.AmbientLight( 0xffffff, 2 );
+            scene.add( ambient );
+            
+            var pointLight = new THREE.PointLight( 0xffffff, 1, 100 );
+            pointLight.position.set( 5, 3, 5 );
+            scene.add( pointLight );
+			
+			var pointLight2 = new THREE.PointLight( 0xffffff, 1, 25 );
+            pointLight2.position.set( 5, -5, 5 );
+            scene.add( pointLight2 );
+			
+
+			
+			//CREAR LAS GEOMETRÍAS
+            //Colores-Geometrias
+			var materialStrip = new THREE.MeshStandardMaterial( { color: 0xAA816F } );
+			var materialFront = new THREE.MeshStandardMaterial( { color: 0xE5C9A2 } );
+			var materialNeck = new THREE.MeshStandardMaterial( { color: 0x947567 } );
+			var materialFan = new THREE.MeshStandardMaterial( { color: 0xCCCCCC} );			
+			var materialEyes = new THREE.MeshStandardMaterial( { color: 0x2E3192} );
+			var materialBrow = new THREE.MeshStandardMaterial( { color: 0x603813} );
+			var materialLip = new THREE.MeshStandardMaterial( { color: 0xC1272D} );
+			var materialHair = new THREE.MeshStandardMaterial( { color: 0x8C6239} );
+			
+			//Cara
+			{
+			var geometria = new THREE.Geometry();
+			for( var i = 0; i <=2; i++){
+			for( var j = 0; j < 2; j++){
+			var punto = new THREE.Vector3();
+			punto.x = i-1;
+			punto.y = j;
+			punto.z = 0;
+			geometria.vertices.push( punto );
+			}
+			}
+			strip[0] = new TRIANGLE_STRIP(geometria, materialStrip);
+			strip[0].draw();
+			
+			var geometria2 = new THREE.Geometry();
+			for( var i = 0; i <= 2; i++){
+			for( var j = 0; j < 2; j++){
+			var punto2 = new THREE.Vector3();
+			punto2.x = i-1;
+			punto2.y = j+1;
+			punto2.z = 0;
+			geometria2.vertices.push( punto2 );
+			}
+			}
+			strip[1] = new TRIANGLE_STRIP(geometria2, materialStrip);
+			strip[1].draw();
+			
+			//Menton
+			var geometria3 = new THREE.Geometry();
+
+			geometria3.vertices.push(
+			new THREE.Vector3(-1,0,0),
+			new THREE.Vector3(1,0,0),
+			new THREE.Vector3(0,-0.25,-0.25)			
+			);
+			geometria3.computeFaceNormals();
+			geometria3.faces.push( new THREE.Face3(1,0,2));
+			var neck = new THREE.Mesh( geometria3, materialStrip);
+			scene.add(neck);
+			}
+			
+			//Orejas
+			{
+			var geometria4 = new THREE.Geometry();
+			geometria4.vertices.push(
+			new THREE.Vector3(-1,0.50,0),
+			new THREE.Vector3(-1,1.50,0),
+			new THREE.Vector3(-1.25,1.25,-0.25)
+			);
+			geometria4.computeFaceNormals();
+			geometria4.faces.push( new THREE.Face3(0,1,2));
+			var sides = new THREE.Mesh( geometria4, materialStrip);
+			scene.add(sides);
+			
+			var geometria5 = new THREE.Geometry();
+			geometria5.vertices.push(
+			new THREE.Vector3(-1.25,1.25,-0.25),
+			new THREE.Vector3(-1.25,0.75,-0.25),
+			new THREE.Vector3(-1,0.50,0)
+			);
+			geometria5.computeFaceNormals();
+			geometria5.faces.push( new THREE.Face3(0,1,2));
+			var sides2 = new THREE.Mesh( geometria5, materialStrip);
+			scene.add(sides2);
+			
+			//Oreja 2
+			var geometria6 = new THREE.Geometry();
+			geometria6.vertices.push(
+			new THREE.Vector3(1,0.50,0),
+			new THREE.Vector3(1,1.50,0),
+			new THREE.Vector3(1.25,1.25,-0.25)
+			);
+			geometria6.computeFaceNormals();
+			geometria6.faces.push( new THREE.Face3(1,0,2));
+			var sides3 = new THREE.Mesh( geometria6, materialStrip);
+			scene.add(sides3);
+			
+			var geometria7 = new THREE.Geometry();
+			geometria7.vertices.push(
+			new THREE.Vector3(1.25,1.25,-0.25),
+			new THREE.Vector3(1.25,0.75,-0.25),
+			new THREE.Vector3(1,0.50,0)
+			);
+			geometria7.computeFaceNormals();
+			geometria7.faces.push( new THREE.Face3(1,0,2));
+			var sides4 = new THREE.Mesh( geometria7, materialStrip);
+			scene.add(sides4);		
+
+
+			}
+				
+			//Nariz
+			{
+			var geometria7 = new THREE.Geometry();
+			for( var i = 0; i <=2; i++){
+			for( var j = 0; j < 2; j++){
+			var punto7 = new THREE.Vector3();
+			punto7.x = i-1;
+			punto7.y = j+0.50;
+			punto7.z = 0.25;
+			geometria7.vertices.push( punto7 );			
+			}
+			}
+			geometria7.scale(0.25,0.75,1);
+			geometria7.translate(0,0.25,0);
+			strip[2] = new TRIANGLE_STRIP(geometria7, materialNeck);
+			strip[2].draw();
+
+			var geometria8 = new THREE.Geometry();
+			geometria8.vertices.push(
+			new THREE.Vector3(-1,0.50,0.25),
+			new THREE.Vector3(1,0.50,0.25),
+			new THREE.Vector3(0,0.25,0)
+			);
+			geometria8.computeFaceNormals();
+			geometria8.scale(0.25,0.75,1);
+			geometria8.translate(0,0.25,0);
+			geometria8.faces.push( new THREE.Face3(1,0,2));
+			var nose1 = new THREE.Mesh( geometria8, materialStrip);
+			scene.add(nose1);
+
+			var geometria9 = new THREE.Geometry();
+			geometria9.vertices.push(
+			new THREE.Vector3(0,0.25,0),
+			new THREE.Vector3(1,0.5,0.25),
+			new THREE.Vector3(1,0.5,0)
+			);
+			geometria9.computeFaceNormals();
+			geometria9.scale(0.25,0.75,1);
+			geometria9.translate(0,0.25,0);
+			geometria9.faces.push( new THREE.Face3(1,0,2));
+			var nose2 = new THREE.Mesh( geometria9, materialNeck);
+			scene.add(nose2);
+			
+			var geometria10 = new THREE.Geometry();
+			geometria10.vertices.push(
+			new THREE.Vector3(0,0.25,0),
+			new THREE.Vector3(-1,0.5,0.25),
+			new THREE.Vector3(-1,0.5,0)
+			);
+			geometria10.computeFaceNormals();
+			geometria10.scale(0.25,0.75,1);
+			geometria10.translate(0,0.25,0);
+			geometria10.faces.push( new THREE.Face3(0,1,2));
+			var nose3 = new THREE.Mesh( geometria10, materialNeck);
+			scene.add(nose3);
+			
+			var geometria11 = new THREE.Geometry();
+			geometria11.vertices.push(
+			new THREE.Vector3(1,0.5,0),
+			new THREE.Vector3(1,1.5,0),
+			new THREE.Vector3(1,1.5,0.25)
+			);
+			geometria11.computeFaceNormals();
+			geometria11.scale(0.25,0.75,1);
+			geometria11.translate(0,0.25,0);
+			geometria11.faces.push( new THREE.Face3(0,1,2));
+			var nose4 = new THREE.Mesh( geometria11, materialNeck);
+			scene.add(nose4);
+			
+			var geometria12 = new THREE.Geometry();
+			geometria12.vertices.push(
+			new THREE.Vector3(1,0.5,0.25),
+			new THREE.Vector3(1,1.5,0.25),
+			new THREE.Vector3(1,0.5,0)
+			);
+			geometria12.computeFaceNormals();
+			geometria12.scale(0.25,0.75,1);
+			geometria12.translate(0,0.25,0);
+			geometria12.faces.push( new THREE.Face3(1,0,2));
+			var nose5 = new THREE.Mesh( geometria12, materialNeck);
+			scene.add(nose5);
+			
+			var geometria13 = new THREE.Geometry();
+			geometria13.vertices.push(
+			new THREE.Vector3(1,0.5,0),
+			new THREE.Vector3(1,1.5,0),
+			new THREE.Vector3(1,1.5,0.25)
+			);
+			geometria13.computeFaceNormals();
+			geometria13.scale(0.25,0.75,1);
+			geometria13.translate(-0.5,0.25,0);
+			geometria13.faces.push( new THREE.Face3(1,0,2));
+			var nose6 = new THREE.Mesh( geometria13, materialNeck);
+			scene.add(nose6);
+			
+			var geometria14 = new THREE.Geometry();
+			geometria14.vertices.push(
+			new THREE.Vector3(1,0.5,0.25),
+			new THREE.Vector3(1,1.5,0.25),
+			new THREE.Vector3(1,0.5,0)
+			);
+			geometria14.computeFaceNormals();
+			geometria14.scale(0.25,0.75,1);
+			geometria14.translate(-0.5,0.25,0);
+			geometria14.faces.push( new THREE.Face3(0,1,2));
+			var nose7 = new THREE.Mesh( geometria14, materialNeck);
+			scene.add(nose7);
+			
+			var geometria15 = new THREE.Geometry();
+			geometria15.vertices.push(
+			new THREE.Vector3(-1,1.5,0),
+			new THREE.Vector3(-1,1.5,0.25),
+			new THREE.Vector3(1,1.5,0.25)
+			);
+			geometria15.computeFaceNormals();
+			geometria15.scale(0.25,0.75,1);
+			geometria15.translate(0,0.25,0);
+			geometria15.faces.push( new THREE.Face3(0,1,2));
+			var nose9 = new THREE.Mesh( geometria15, materialNeck);
+			scene.add(nose9);
+			
+			var geometria16 = new THREE.Geometry();
+			geometria16.vertices.push(
+			new THREE.Vector3(1,1.5,0),
+			new THREE.Vector3(1,1.5,0.25),
+			new THREE.Vector3(-1,1.5,0)
+			);
+			geometria16.computeFaceNormals();
+			geometria16.scale(0.25,0.75,1);
+			geometria16.translate(0,0.25,0);
+			geometria16.faces.push( new THREE.Face3(1,0,2));
+			var nose10 = new THREE.Mesh( geometria16, materialNeck);
+			scene.add(nose10);
+			}
+			
+			//Ojos
+			{
+				//Clara
+			var radio = 1.0;
+			var res = 10.0;
+			var geometriaeye1 = new THREE.Geometry();
+			var puntocero = new THREE.Vector3(0,0,0.25);
+			
+			geometriaeye1.vertices.push (puntocero);
+			for( var i = 0; i <= res; i++){
+			var puntoeye = new THREE.Vector3();
+			puntoeye.x = radio * Math.cos( ( 2 * Math.PI * i )/ res );
+			puntoeye.y = radio * Math.sin( ( 2 * Math.PI * i )/ res );
+			puntoeye.z = 0.25;	
+			geometriaeye1.vertices.push (puntoeye);
+			}
+			
+			geometriaeye1.scale(0.25,0.25,1);
+			geometriaeye1.translate(-0.5,1.50,0);
+			fan[0] = new TRIANGLE_FAN(geometriaeye1, materialFan);	
+			fan[0].draw();
+		
+			var geometriaeye2 = new THREE.Geometry();
+			var puntocero = new THREE.Vector3(0,0,0.25);
+			geometriaeye2.vertices.push (puntocero);
+			for( var i = 0; i <= res; i++){
+			var puntoeye2 = new THREE.Vector3();
+			puntoeye2.x = radio * Math.cos( ( 2 * Math.PI * i )/ res );
+			puntoeye2.y = radio * Math.sin( ( 2 * Math.PI * i )/ res );
+			puntoeye2.z = 0.25;	
+			geometriaeye2.vertices.push (puntoeye2);
+			}
+			geometriaeye2.scale(0.25,0.25,1);
+			geometriaeye2.translate(0.5,1.50,0);
+			fan[1] = new TRIANGLE_FAN(geometriaeye2, materialFan);	
+			fan[1].draw();
+			
+				//iris
+			var geometriaeye3 = new THREE.Geometry();
+			var puntocero = new THREE.Vector3(0,0,0.25);
+			geometriaeye3.vertices.push (puntocero);
+			for( var i = 0; i <= res; i++){
+			var puntoeye3 = new THREE.Vector3();
+			puntoeye3.x = (radio/2) * Math.cos( ( 2 * Math.PI * i )/ res );
+			puntoeye3.y = (radio/2) * Math.sin( ( 2 * Math.PI * i )/ res );
+			puntoeye3.z = 0.26;	
+			geometriaeye3.vertices.push (puntoeye3);
+			}
+			geometriaeye3.scale(0.25,0.25,1);
+			geometriaeye3.translate(0.5,1.50,0);
+			fan[2] = new TRIANGLE_FAN(geometriaeye3, materialEyes);	
+			fan[2].draw();
+			
+			var geometriaeye4 = new THREE.Geometry();
+			var puntocero = new THREE.Vector3(0,0,0.25);
+			geometriaeye4.vertices.push (puntocero);
+			for( var i = 0; i <= res; i++){
+			var puntoeye4 = new THREE.Vector3();
+			puntoeye4.x = (radio/2) * Math.cos( ( 2 * Math.PI * i )/ res );
+			puntoeye4.y = (radio/2) * Math.sin( ( 2 * Math.PI * i )/ res );
+			puntoeye4.z = 0.26;	
+			geometriaeye4.vertices.push (puntoeye4);
+			}
+			geometriaeye4.scale(0.25,0.25,1);
+			geometriaeye4.translate(-0.5,1.50,0);
+			fan[3] = new TRIANGLE_FAN(geometriaeye4, materialEyes);	
+			fan[3].draw();
+			
+				//Lados
+			var geometriaeye3 = new THREE.Geometry();	
+			for( var i = 0; i <= res; i++){
+            var puntoeyelat1 = new THREE.Vector3();
+			var puntoeyelat2 = new THREE.Vector3();
+			puntoeyelat1.x = radio * Math.cos( ( 2 * Math.PI * i )/ res );
+            puntoeyelat1.y = radio * Math.sin( ( 2 * Math.PI * i )/ res );
+            puntoeyelat1.z = 1;
+			puntoeyelat2.x = puntoeyelat1.x;
+			puntoeyelat2.y = puntoeyelat1.y;
+			puntoeyelat2.z = 0;
+			geometriaeye3.vertices.push( puntoeyelat2 );
+			geometriaeye3.vertices.push( puntoeyelat1 );
+			}
+			geometriaeye3.scale(0.25,0.25,0.25);
+			geometriaeye3.translate(0.5,1.50,0);
+			strip[3] = new TRIANGLE_STRIP(geometriaeye3, materialFan);;	
+			strip[3].draw();
+
+			var geometriaeye4 = new THREE.Geometry();	
+			for( var i = 0; i <= res; i++){
+            var puntoeyelat3 = new THREE.Vector3();
+			var puntoeyelat4 = new THREE.Vector3();
+			puntoeyelat3.x = radio * Math.cos( ( 2 * Math.PI * i )/ res );
+            puntoeyelat3.y = radio * Math.sin( ( 2 * Math.PI * i )/ res );
+            puntoeyelat3.z = 1;
+			puntoeyelat4.x = puntoeyelat3.x;
+			puntoeyelat4.y = puntoeyelat3.y;
+			puntoeyelat4.z = 0;
+			geometriaeye4.vertices.push( puntoeyelat4 );
+			geometriaeye4.vertices.push( puntoeyelat3 );
+			}
+			geometriaeye4.scale(0.25,0.25,0.25);
+			geometriaeye4.translate(-0.5,1.50,0);
+			strip[4] = new TRIANGLE_STRIP(geometriaeye4, materialFan);;	
+			strip[4].draw();
+			
+			}
+			
+			//Frente
+			{
+			var geometriafront = new THREE.Geometry();
+			geometriafront.vertices.push(
+			new THREE.Vector3(-1, 2, 0),
+			new THREE.Vector3(-0.75, 2.5, -0.25),
+			new THREE.Vector3(1, 2, 0)
+			)
+			geometriafront.computeFaceNormals();
+			geometriafront.faces.push( new THREE.Face3(1,0,2));
+			var frente = new THREE.Mesh( geometriafront, materialFront);
+			scene.add(frente);
+			
+			var geometriafront2 = new THREE.Geometry();
+			geometriafront2.vertices.push(
+			new THREE.Vector3(1, 2, 0),
+			new THREE.Vector3(0.75, 2.5, -0.25),
+			new THREE.Vector3(-0.75, 2.5, -0.25)
+			)
+			geometriafront2.computeFaceNormals();
+			geometriafront2.faces.push( new THREE.Face3(0,1,2));
+			var frente2 = new THREE.Mesh( geometriafront2, materialFront);
+			scene.add(frente2);
+			}
+			
+			//Cejas
+			{
+			
+			var geometriabrow = new THREE.Geometry();
+			for( var i = 0; i <=1; i++){
+			for( var j = 0; j <2; j++){
+			var puntob = new THREE.Vector3();
+			puntob.x = i;
+			puntob.y = j;
+			puntob.z = 0.25;
+			geometriabrow.vertices.push( puntob );
+			}
+			}
+			geometriabrow.scale(0.75,0.25,1);
+			geometriabrow.translate(-1,1.75,0);
+			strip[5] = new TRIANGLE_STRIP(geometriabrow, materialBrow);
+			strip[5].draw();
+			
+
+			var geometriabrow2 = new THREE.Geometry();
+			for( var i = 0; i <=1; i++){
+			for( var j = 0; j <2; j++){
+			var puntob2 = new THREE.Vector3();
+			puntob2.x = i;
+			puntob2.y = j;
+			puntob2.z = 0.25;
+			geometriabrow2.vertices.push( puntob2 );
+			}
+			}
+			geometriabrow2.scale(0.75,0.25,1);
+			geometriabrow2.translate(0.25,1.75,0);
+			strip[6] = new TRIANGLE_STRIP(geometriabrow2, materialBrow);
+			strip[6].draw();
+			
+			var geometriablat = new THREE.Geometry();
+			geometriablat.vertices.push(
+			new THREE.Vector3(-1, 2, 0.25),
+			new THREE.Vector3(-1, 1.75, 0.25),
+			new THREE.Vector3(-1, 2, 0)
+			)
+			//geometriablat.computeFaceNormals();
+			geometriablat.faces.push( new THREE.Face3(1,0,2));
+			var l1 = new THREE.Mesh( geometriablat, materialBrow);
+			scene.add(l1);
+			
+			var geometriablat2 = new THREE.Geometry();
+			geometriablat2.vertices.push(
+			new THREE.Vector3(-1, 2, 0),
+			new THREE.Vector3(-1, 1.75, 0),
+			new THREE.Vector3(-1, 1.75, 0.25)
+			)
+			//geometriablat2.computeFaceNormals();
+			geometriablat2.faces.push( new THREE.Face3(0,1,2));
+			var l2 = new THREE.Mesh( geometriablat2, materialBrow);
+			scene.add(l2);
+			
+			var geometriablat3 = new THREE.Geometry();
+			geometriablat3.vertices.push(
+			new THREE.Vector3(-0.25, 2, 0.25),
+			new THREE.Vector3(-0.25, 1.75, 0.25),
+			new THREE.Vector3(-0.25, 2, 0)
+			)
+			//geometriablat3.computeFaceNormals();
+			geometriablat3.faces.push( new THREE.Face3(0,1,2));
+			var l3 = new THREE.Mesh( geometriablat3, materialBrow);
+			scene.add(l3);
+			
+			var geometriablat4 = new THREE.Geometry();
+			geometriablat4.vertices.push(
+			new THREE.Vector3(-0.25, 2, 0),
+			new THREE.Vector3(-0.25, 1.75, 0),
+			new THREE.Vector3(-0.25, 1.75, 0.25)
+			)
+			//geometriablat4.computeFaceNormals();
+			geometriablat4.faces.push( new THREE.Face3(1,0,2));
+			var l4 = new THREE.Mesh( geometriablat4, materialBrow);
+			scene.add(l4);
+			
+			var geometriablat5 = new THREE.Geometry();
+			geometriablat5.vertices.push(
+			new THREE.Vector3(0.25, 2, 0.25),
+			new THREE.Vector3(0.25, 1.75, 0.25),
+			new THREE.Vector3(0.25, 2, 0)
+			)
+			geometriablat5.computeFaceNormals();
+			geometriablat5.faces.push( new THREE.Face3(1,0,2));
+			var l5 = new THREE.Mesh( geometriablat5, materialBrow);
+			scene.add(l5);
+			
+			var geometriablat6 = new THREE.Geometry();
+			geometriablat6.vertices.push(
+			new THREE.Vector3(0.25, 2, 0),
+			new THREE.Vector3(0.25, 1.75, 0),
+			new THREE.Vector3(0.25, 1.75, 0.25)
+			)
+			geometriablat6.computeFaceNormals();
+			geometriablat6.faces.push( new THREE.Face3(0,1,2));
+			var l6 = new THREE.Mesh( geometriablat6, materialBrow);
+			scene.add(l6);
+			
+			var geometriablat7 = new THREE.Geometry();
+			geometriablat7.vertices.push(
+			new THREE.Vector3(1, 2, 0.25),
+			new THREE.Vector3(1, 1.75, 0.25),
+			new THREE.Vector3(1, 2, 0)
+			)
+			geometriablat7.computeFaceNormals();
+			geometriablat7.faces.push( new THREE.Face3(0,1,2));
+			var l7 = new THREE.Mesh( geometriablat7, materialBrow);
+			scene.add(l7);
+			
+			var geometriablat8 = new THREE.Geometry();
+			geometriablat8.vertices.push(
+			new THREE.Vector3(1, 2, 0),
+			new THREE.Vector3(1, 1.75, 0),
+			new THREE.Vector3(1, 1.75, 0.25)
+			)
+			geometriablat8.computeFaceNormals();
+			geometriablat8.faces.push( new THREE.Face3(1,0,2));
+			var l8 = new THREE.Mesh( geometriablat8, materialBrow);
+			scene.add(l8);			
+			
+			
+			
+			}
+			
+			//Boca
+			{
+			
+			var geometrialips = new THREE.Geometry();
+			geometrialips.vertices.push(
+			new THREE.Vector3(-0.25, 0.4, 0.1),
+			new THREE.Vector3(0, 0.25, 0),
+			new THREE.Vector3(0.25, 0.4, 0.1)
+			)
+			geometrialips.computeFaceNormals();
+			geometrialips.faces.push( new THREE.Face3(0,1,2));
+			var lip = new THREE.Mesh( geometrialips, materialLip);
+			scene.add(lip);
+			
+			var geometrialips2 = new THREE.Geometry();
+			geometrialips2.vertices.push(
+			new THREE.Vector3(0, 0.25, 0),
+			new THREE.Vector3(0.25, 0.4, 0),
+			new THREE.Vector3(0.25, 0.4, 0.1)
+			)
+			geometrialips2.computeFaceNormals();
+			geometrialips2.faces.push( new THREE.Face3(0,1,2));
+			var lip2 = new THREE.Mesh( geometrialips2, materialLip);
+			scene.add(lip2);
+			
+			var geometrialips3 = new THREE.Geometry();
+			geometrialips3.vertices.push(
+			new THREE.Vector3(0, 0.25, 0),
+			new THREE.Vector3(-0.25, 0.4, 0),
+			new THREE.Vector3(-0.25, 0.4, 0.1)
+			)
+			geometrialips3.computeFaceNormals();
+			geometrialips3.faces.push( new THREE.Face3(1,0,2));
+			var lip3 = new THREE.Mesh( geometrialips3, materialLip);
+			scene.add(lip3);
+			
+			var geometrialips4 = new THREE.Geometry();
+			geometrialips4.vertices.push(
+			new THREE.Vector3(-0.25, 0.4, 0),
+			new THREE.Vector3(-0.25, 0.4, 0.1),
+			new THREE.Vector3(0.25, 0.4, 0.1)
+			)
+			geometrialips4.computeFaceNormals();
+			geometrialips4.faces.push( new THREE.Face3(0,1,2));
+			var lip4 = new THREE.Mesh( geometrialips4, materialLip);
+			scene.add(lip4);			
+			
+			var geometrialips5 = new THREE.Geometry();
+			geometrialips5.vertices.push(
+			new THREE.Vector3(0.25, 0.4, 0),
+			new THREE.Vector3(0.25, 0.4, 0.1),
+			new THREE.Vector3(-0.25, 0.4, 0)
+			)
+			geometrialips5.computeFaceNormals();
+			geometrialips5.faces.push( new THREE.Face3(1,0,2));
+			var lip5 = new THREE.Mesh( geometrialips5, materialLip);
+			scene.add(lip5);			
+			
+			}
+		
+			//Pelo
+			{
+			var geometriahair = new THREE.Geometry();
+			geometriahair.vertices.push(
+			new THREE.Vector3(-0.75, 2, 0.25),
+			new THREE.Vector3(-1.25, 2, 0.25),
+			new THREE.Vector3(-1, 2.75, 0),
+			
+			)
+			geometriahair.computeFaceNormals();
+			geometriahair.faces.push( new THREE.Face3(1,0,2));
+			var h = new THREE.Mesh( geometriahair, materialHair);
+			scene.add(h);
+			
+			var geometriahair2 = new THREE.Geometry();
+			geometriahair2.vertices.push(
+			new THREE.Vector3(-0.75, 2, 0.25),
+			new THREE.Vector3(-0.5, 2.25, 0.25),
+			new THREE.Vector3(-1, 2.75, 0)
+			)
+			geometriahair2.computeFaceNormals();
+			geometriahair2.faces.push( new THREE.Face3(2,0,1));
+			var h2 = new THREE.Mesh( geometriahair2, materialHair);
+			scene.add(h2);
+			
+			var geometriahair3 = new THREE.Geometry();
+			geometriahair3.vertices.push(
+			new THREE.Vector3(-1, 2.75, 0),
+			new THREE.Vector3(0, 2.75, 0),
+			new THREE.Vector3(-0.5, 2.25, 0.25)
+			)
+			geometriahair3.computeFaceNormals();			
+			geometriahair3.faces.push( new THREE.Face3(1,0,2));
+			var h3 = new THREE.Mesh( geometriahair3, materialHair);
+			scene.add(h3);			
+					
+			var geometriahair4 = new THREE.Geometry();
+			geometriahair4.vertices.push(
+			new THREE.Vector3(-0.5, 2.25, 0.25),
+			new THREE.Vector3(-0.25, 2, 0.25),
+			new THREE.Vector3(0, 2.75, 0)
+			)
+			geometriahair4.computeFaceNormals();
+			geometriahair4.faces.push( new THREE.Face3(2,0,1));
+			var h4 = new THREE.Mesh( geometriahair4, materialHair);
+			scene.add(h4);	
+
+			var geometriahair5 = new THREE.Geometry();
+			geometriahair5.vertices.push(
+			new THREE.Vector3(-0.25, 2, 0.25),
+			new THREE.Vector3(0, 2.75, 0),
+			new THREE.Vector3(1, 2.75, 0)
+			)
+			geometriahair5.computeFaceNormals();			
+			geometriahair5.faces.push( new THREE.Face3(1,0,2));
+			var h5 = new THREE.Mesh( geometriahair5, materialHair);
+			scene.add(h5);	
+
+			var geometriahair6 = new THREE.Geometry();
+			geometriahair6.vertices.push(
+			new THREE.Vector3(-0.25, 2, 0.25),
+			new THREE.Vector3(1, 2.75, 0),
+			new THREE.Vector3(1.25, 2, 0.25)
+			)
+			geometriahair6.computeFaceNormals();			
+			geometriahair6.faces.push( new THREE.Face3(1,0,2));
+			var h6 = new THREE.Mesh( geometriahair6, materialHair);
+			scene.add(h6);
+
+			var geometriahair7 = new THREE.Geometry();
+			geometriahair7.vertices.push(
+			new THREE.Vector3(-1.25, 2, 0.25),
+			new THREE.Vector3(-1, 2.75, 0),
+			new THREE.Vector3(-1.25, 2, -0.25)
+			)
+			geometriahair7.computeFaceNormals();			
+			geometriahair7.faces.push( new THREE.Face3(0,1,2));
+			var h7 = new THREE.Mesh( geometriahair7, materialHair);
+			scene.add(h7);				
+			
+			var geometriahair8 = new THREE.Geometry();
+			geometriahair8.vertices.push(
+			new THREE.Vector3(1.25, 2, 0.25),
+			new THREE.Vector3(1, 2.75, 0),
+			new THREE.Vector3(1.25, 2, -0.25)
+			)
+			geometriahair8.computeFaceNormals();			
+			geometriahair8.faces.push( new THREE.Face3(1,0,2));
+			var h8 = new THREE.Mesh( geometriahair8, materialHair);
+			scene.add(h8);				
+			}
+			//CREAR LOS MATERIALES
+		
+            var matLinea = new THREE.LineBasicMaterial( { color: 0xFFFFFF } );
+			
+			//CREAR LOS OBJETOS
+			var guia1 = new THREE.Line( geometria, matLinea );
+			var guia12 = new THREE.Line( geometria2, matLinea );
+			var guia2 = new THREE.Line( geometria3, matLinea );
+		
+		  	//AGREGAR A LA ESCENA
+		  	//scene.add( gridHelperXY );
+            scene.add( gridHelperXZ );
+		  	scene.add( arrowX );	
+		  	scene.add( arrowY );	
+		  	scene.add( arrowZ );	
+			scene.add(guia2 );
+
+			scene.add( guia1);
+			scene.add( guia12);
+			camera.position.x = 10;
+			camera.position.y = 1;	 
+		  	camera.position.z = 10;
+			
+		  	camera.lookAt( origin );
+			}
+    
+    function animate() {
+        render();
+		controls.update(); // required if controls.enableDamping = true, or if controls.autoRotate = true
+        requestAnimationFrame( animate );
+    }
+    
+    function render(){
+        renderer.render( scene, camera );
+    }
+    </script>
+  </body>
+</html>

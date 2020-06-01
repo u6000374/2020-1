@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ford T</title>
+    <style>
+      html, body { margin: 0; padding: 0; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <script src="js/three.min.js"></script>
+	<script src="js/controls/OrbitControls.js"></script>
+	<script src="js/csg.js"></script>
+	<script src="js/THREE.CSG.js"></script>
+    <script>
+		//Usar 'z' y 'x' para moverlo
+		//Usar 'a' y 'z' para rotar
+		var scene, aspect, camera, renderer, controls;
+		var startTime = Date.now();	
+		var x = new THREE.Vector3( 1, 0, 0 );
+		var y = new THREE.Vector3( 0, 1, 0 );
+		var z = new THREE.Vector3( 0, 0, 1 );	
+		var upArrow = false;
+		var downArrow = false;
+		var	xArrow = false;
+		var	zArrow = false;
+		var neumaticos = new Array(3);
+		var Global;
+		var Focos = new Array(1);
+		var FocosScena = new Array(1);
+		var thetaSum=0;
+		var positivo=false;
+		var Prov = new THREE.MeshStandardMaterial( { color: 0x00FF00} );
+		
+		class TRIANGLE_FAN{	
+		  constructor( Geometria, Material ){
+		    this.geometria = Geometria;
+			this.material = Material;
+		  }  
+		  draw(){			
+			for( var i=2; i<this.geometria.vertices.length; i++ ){
+			  this.geometria.faces.push( new THREE.Face3(0,i-1,i) );
+			}
+			this.geometria.computeFaceNormals();
+			var fan = new THREE.Mesh( this.geometria, this.material );
+			Global.add( fan );
+		  }
+		}
+		
+		class ClaseNeumatico{	
+		
+		  constructor( x1, y1, z1, r ){
+		    this.x1 = x1;
+			this.y1 = y1;
+			this.z1 = z1;
+			this.r = r;
+		  }  
+		  draw(){	
+	  
+		var GeoEje = new THREE.CylinderGeometry(0.05,0.05,0.4,5,5);
+		var MatEje = new THREE.MeshStandardMaterial( { color: 0x2A0A0A} );
+		
+		var Eje = new THREE.Mesh( GeoEje, MatEje );
+		Global.add(Eje);	
+		Eje.rotateOnWorldAxis( x, THREE.Math.degToRad(90) );
+		Eje.rotateOnWorldAxis( y, THREE.Math.degToRad(90) );
+		Eje.translateX(this.z1);
+		Eje.translateY(this.x1);
+		Eje.translateZ(this.y1);
+		Eje.rotateOnWorldAxis( z, THREE.Math.degToRad(this.r) );
+		var GeoRinPrin = new THREE.CylinderGeometry(0.15,0.2,0.05,30,30);
+		var GeoRinPrin2 = new THREE.CylinderGeometry(0.2,0.15,0.05,30,30);
+		var MatRin = new THREE.MeshStandardMaterial( { color: 0x61210B} );
+		GeoRinPrin.translate(0,0.1,0);		
+		GeoRinPrin2.translate(0,-0.1,0);
+		var RinPrin = new THREE.Mesh( GeoRinPrin, MatRin );
+		var RinPrin2 = new THREE.Mesh( GeoRinPrin2, MatRin );
+		Eje.add(RinPrin);	
+		Eje.add(RinPrin2);
+
+		
+		var GeoRin = new THREE.CylinderGeometry(0.1,0.1,0.3,30,30);
+		var MatRin2 = new THREE.MeshStandardMaterial( { color: 0x3B170B} );
+		var RinSec = new THREE.Mesh( GeoRin, MatRin2);	
+		Eje.add(RinSec);
+
+		
+		var GeoMatDec = new THREE.MeshStandardMaterial( { color: 0xF3F781} );
+		var GeoDec = new THREE.SphereGeometry( 0.06, 6, 6 );
+		GeoDec.translate(0,0.25,0);	
+		var Dec = new THREE.Mesh( GeoDec, GeoMatDec );	
+		Eje.add(Dec);
+	
+			
+		
+		var GeoRay1 = new THREE.CylinderGeometry(0.02,0.02,1,6,6);
+		var Ray = new Array(4);
+		Ray[0] = new THREE.Mesh( GeoRay1, MatRin2 );	
+		Ray[1] = new THREE.Mesh( GeoRay1, MatRin2 );
+		Ray[2] = new THREE.Mesh( GeoRay1, MatRin2 );
+		Ray[3] = new THREE.Mesh( GeoRay1, MatRin2 );		
+
+		Ray[1].rotateOnWorldAxis( x, THREE.Math.degToRad(90) );		
+		Ray[2].rotateOnWorldAxis( x, THREE.Math.degToRad(45) );
+		Ray[3].rotateOnWorldAxis( x, THREE.Math.degToRad(135) );
+		Ray[0].rotateOnWorldAxis( z, THREE.Math.degToRad(90) );	
+		Ray[1].rotateOnWorldAxis( z, THREE.Math.degToRad(90) );		
+		Ray[2].rotateOnWorldAxis( z, THREE.Math.degToRad(90) );
+		Ray[3].rotateOnWorldAxis( z, THREE.Math.degToRad(90) );
+		
+		var RayCSG = new Array(4);
+		RayCSG[0] = THREE.CSG.fromMesh(RinSec)
+		RayCSG[1] = THREE.CSG.fromMesh(Ray[0]);
+		RayCSG[2] = THREE.CSG.fromMesh(Ray[1]);
+		RayCSG[3] = THREE.CSG.fromMesh(Ray[2]);
+		RayCSG[4] = THREE.CSG.fromMesh(Ray[3]);	
+		var RinInterior = new Array(4);
+		
+		for (var i=0;i<4;i++){
+		var RinInteriorCSG = RayCSG[i+1].union(( RayCSG[i] ));
+		RinInterior[i] = THREE.CSG.toMesh( RinInteriorCSG );
+		if(i%2!=0){
+		RinInterior[i].material=MatRin2;
+		Eje.add( RinInterior[i]);}
+		}
+			
+	
+		var GeoNeumatico = new THREE.TorusGeometry(0.5, 0.05, 20, 50);
+		var MatNeumatico = new THREE.MeshStandardMaterial( { color: 0x000000} );
+		var Neumatico = new THREE.Mesh( GeoNeumatico, MatNeumatico );
+		Eje.add( Neumatico );
+		Neumatico.rotateOnWorldAxis( x, THREE.Math.degToRad(90) );
+			
+		var GeoLlanta1 = new THREE.CylinderGeometry(0.45,0.45,0.05,50,30);
+		var MatLlanta1 = new THREE.MeshStandardMaterial( { color: 0x3B240B} );
+		var llanta1 = new THREE.Mesh( GeoLlanta1, MatLlanta1 );
+		
+			
+		var GeoLlanta2 = new THREE.CylinderGeometry(0.4,0.4,0.05,50,30);
+		var llanta2 = new THREE.Mesh( GeoLlanta2, MatLlanta1 );
+
+			
+		var llantaCSG1 = THREE.CSG.fromMesh( llanta1 );
+		var llantaCSG2 = THREE.CSG.fromMesh( llanta2 );
+			
+		var llantaCSG = llantaCSG1.subtract( llantaCSG2 );
+			
+		var llanta = THREE.CSG.toMesh( llantaCSG );
+		llanta.material=MatLlanta1;
+		Eje.add( llanta );
+		
+		  }
+		
+		}
+		
+		class ClassFocos{	
+		
+		  constructor( x2 ){
+		    this.x2 = x2;
+		  }  
+		draw(){	
+		var matFlash = new THREE.MeshStandardMaterial( { color: 0x151515} );
+		var matFoco = new THREE.MeshStandardMaterial( { color: 0xF4FA58} );
+		var geoFlash = new THREE.SphereGeometry( 0.2, 32, 32 );
+		var Flash = new THREE.Mesh( geoFlash,Prov );
+		Flash.translateZ(1.2);
+		Flash.translateY(0.5);
+		
+		var geoCutFlash = new THREE.BoxGeometry( 0.5, 0.6, 0.2 );
+		var Cut = new THREE.Mesh( geoCutFlash, Prov );
+		Cut.translateZ(1.31);
+		Cut.translateY(0.6);
+		
+		var FlashCSG1 = THREE.CSG.fromMesh( Flash );
+		var FlashCSG2 = THREE.CSG.fromMesh( Cut );
+
+		var FR1 = FlashCSG1.subtract( FlashCSG2 );
+
+		var Flash1 = THREE.CSG.toMesh ( FR1 );
+		
+		Flash1.material = matFlash;
+		Flash1.translateZ(0.1);
+		Flash1.translateX(this.x2);
+		Global.add(Flash1);
+
+		
+		var geotorus = new THREE.TorusGeometry( 0.18, 0.038, 10, 25 );
+		var mattorus = new THREE.MeshStandardMaterial( { color: 0xD8D8D8 } );
+		var torus = new THREE.Mesh( geotorus, mattorus );
+		Global.add( torus );
+		torus.translateZ(1.32);
+		torus.translateY(0.5);
+		torus.translateX(this.x2);
+		
+		var puntocero = new THREE.Vector3(0,0,0.3);
+		var res = 15;
+		var radio = 0.15;
+		var geometriaeye = new THREE.Geometry();
+		geometriaeye.vertices.push (puntocero);
+		for( var i = 0; i <= res; i++){
+			var puntoeye = new THREE.Vector3();
+			puntoeye.x = radio * Math.cos( ( 2 * Math.PI * i )/ res );
+			puntoeye.y = radio * Math.sin( ( 2 * Math.PI * i )/ res );
+			puntoeye.z = 0.25;	
+			
+			geometriaeye.vertices.push (puntoeye);
+			}	
+		geometriaeye.translate(this.x2,0.5,1.09);
+		Focos[0] = new TRIANGLE_FAN(geometriaeye, matFoco);	
+		Focos[0].draw();	
+		}
+		}
+		
+		init();
+		animate();
+		
+		function init(){
+			//INICIALIZACIÓN
+	        scene = new THREE.Scene();
+	        aspect = window.innerWidth / window.innerHeight;
+	        camera = new THREE.PerspectiveCamera( 75, aspect, 0.1, 1000);
+	        renderer = new THREE.WebGLRenderer();
+	        renderer.setSize( window.innerWidth, window.innerHeight );
+	        document.body.appendChild( renderer.domElement );
+			controls = new THREE.OrbitControls( camera, renderer.domElement );
+			
+	var onKeyDown = function ( event ) {
+				switch ( event.keyCode ) {
+					case 65: 
+						upArrow = true;
+						break;
+					case 83: 
+						downArrow = true;
+						break;
+					case 88:
+						xArrow = true;
+						break;
+					case 90:
+						zArrow = true;
+						break;}
+						};
+	var onKeyUp = function ( event ) {
+			switch ( event.keyCode ) {
+				case 65: 
+					upArrow = false;
+					break;
+				case 83:
+					downArrow = false;
+					break;
+				case 88:
+					xArrow = false;
+					break;
+				case 90:
+					zArrow = false;
+					break;}
+					};
+			document.addEventListener( 'keydown', onKeyDown, false );
+			document.addEventListener( 'keyup', onKeyUp, false );
+			document.addEventListener( 'keyleft', onKeyDown, false );
+			document.addEventListener( 'keyrigth', onKeyUp, false );
+			document.addEventListener( 'keyz', onKeyDown, false );
+			document.addEventListener( 'keyx', onKeyUp, false );		
+			//ELEMENTOS COMUNES
+			var size = 10;
+			var arrowSize = 1;
+			var divisions = size;
+			var origin = new THREE.Vector3( 0, 0, 0 );
+		  	var color = new THREE.Color( 0x333333 );
+		  	var colorR = new THREE.Color( 0xAA3333 );
+		  	var colorG = new THREE.Color( 0x33AA33 );
+		  	var colorB = new THREE.Color( 0x333366 );
+			
+		  	//CREAR LAS GRILLAS PARA EL ESCENARIO
+		  	var axesHelper = new THREE.AxesHelper( size );
+			scene.add( axesHelper );
+			
+		  	var gridHelperXZ = new THREE.GridHelper( size, divisions, color, color );
+			scene.add( gridHelperXZ );
+            
+            //ROTARLAS PARA QUE QUEDEN EN EL ESPACIO ADECUADO
+            gridHelperXZ.rotateOnWorldAxis ( y, THREE.Math.degToRad(90) );
+
+            //CREAR ILUMINACIÓN
+            var ambient = new THREE.AmbientLight( 0xffffff, 2 );
+            scene.add( ambient );
+			
+            var pointLight = new THREE.PointLight( 0xffffff, 1, 100 );
+            pointLight.position.set( -5, -2, 5 );
+            scene.add( pointLight );
+			
+            var pointLight = new THREE.PointLight( 0xffffff, .5, 100 );
+            pointLight.position.set( 5, -2, -5 );
+            scene.add( pointLight );
+			
+		//MOVIMIENTO
+			var	GeoGlobal = new THREE.BoxGeometry( 0.001, 0.001, 0.001 );
+			var MatGlobal = new THREE.MeshBasicMaterial( {color: 0x0431B4} );
+			Global = new THREE.Mesh( GeoGlobal, MatGlobal );
+
+		
+		neumaticos[0] = new ClaseNeumatico(0.85,0,-0.6,0);
+		neumaticos[0].draw();
+
+		neumaticos[1] = new ClaseNeumatico(-0.85,0,-0.6,180);
+		neumaticos[1].draw();
+		
+		neumaticos[2] = new ClaseNeumatico(0.85,0,1.8,0);
+		neumaticos[2].draw();
+		
+		neumaticos[3] = new ClaseNeumatico(-0.85,0,1.8,180);
+		neumaticos[3].draw();
+		
+		FocosScena[0] = new ClassFocos(0.45);
+		FocosScena[0].draw();
+		
+		FocosScena[1] = new ClassFocos(-0.45);
+		FocosScena[1].draw();
+		
+		//Motor
+		{
+		var GeoMotorEje = new THREE.BoxGeometry( 0.005, 0.005, 0.005 );
+		var MatMotorEje = new THREE.MeshBasicMaterial( {color: 0xF2E0F7} );
+		
+		var MEje = new THREE.Mesh( GeoMotorEje, MatMotorEje );
+		Global.add( MEje );
+		MEje.translateY(0.3);
+		MEje.scale.set( 1, 0.8, 1 );
+		var GeoMotorPri = new THREE.BoxGeometry( 0.8, 0.6, 0.8 );
+		var MotorPri = new THREE.Mesh( GeoMotorPri, Prov );
+
+		var GeoMotorSec = new THREE.CylinderGeometry( 0.4, 0.4, 0.8, 8 );
+		var MotorSec = new THREE.Mesh( GeoMotorSec, Prov );
+		MotorSec.rotateOnWorldAxis( x, THREE.Math.degToRad(90) );
+		MotorSec.translateZ(-0.3);
+		
+		
+		var GeoMotorUni = new THREE.CylinderGeometry( 0.82, 0.32, 0.8, 4 );
+		var MotorUni = new THREE.Mesh( GeoMotorUni, Prov );
+		MotorUni.translateY(0.14);
+		MotorUni.translateZ(-0.3);
+		MotorUni.rotateOnWorldAxis( y, THREE.Math.degToRad(45) );
+		MotorUni.rotateOnWorldAxis( x, THREE.Math.degToRad(270) );
+		
+		var geoExtra = new THREE.BoxGeometry( 1.2999, 1.2, 0.02 );	
+		var Extra = new THREE.Mesh( geoExtra, Prov );
+		Extra.translateY(0.15);
+		Extra.translateZ(-0.7);
+
+		var MotorPriCSG = THREE.CSG.fromMesh( MotorPri );
+		var MotorSecCSG = THREE.CSG.fromMesh( MotorSec );
+		var MotorTerCSG = THREE.CSG.fromMesh( MotorUni );
+		var MotorCuaCSG = THREE.CSG.fromMesh( Extra );
+		
+		var MotorResCSG1 = MotorPriCSG.union(MotorCuaCSG);
+		var MotorResCSG2 = MotorResCSG1.union(MotorSecCSG);
+		var MotorResCSG = MotorResCSG2.union(MotorTerCSG);
+		
+		var MatMotor = new THREE.MeshStandardMaterial( { color: 0x151515} );
+		var MotorRes = THREE.CSG.toMesh(MotorResCSG);
+		MotorRes.material = MatMotor;
+		MEje.add(MotorRes);
+		MotorRes.translateZ(0.7);
+
+		
+		}
+		
+		//Placa
+		{
+		var GeoPlacaG = new THREE.BoxGeometry( 0.8, 0.6, 0.1 );
+		var MatPlacaG = new THREE.MeshBasicMaterial( {color: 0xA4A4A4} );
+		var PlacaG = new THREE.Mesh( GeoPlacaG, MatPlacaG );
+		//scene.add( PlacaG );
+		PlacaG.translateZ(0.95);
+		
+		var GeoPlacaP = new THREE.BoxGeometry( 0.6, 0.5, 0.15);
+		var MatPlacaP = new THREE.MeshBasicMaterial( {color: 0x120A2A} );
+		var PlacaP = new THREE.Mesh( GeoPlacaP, MatPlacaP );
+		//scene.add( PlacaP );
+		PlacaP.translateZ(1);
+		
+		var GeoPlacaA = new THREE.CylinderGeometry( 0.4, 0.4, 0.1, 8 );
+		var PlacaA = new THREE.Mesh( GeoPlacaA, Prov );
+		PlacaA.translateZ(0.95);
+		PlacaA.translateY(0.3);
+		PlacaA.rotateOnWorldAxis( x, THREE.Math.degToRad(90) );
+
+		
+		var PlacaGCSG = THREE.CSG.fromMesh( PlacaG );
+		var PlacaPCSG = THREE.CSG.fromMesh( PlacaP );
+		var PlacaACSG = THREE.CSG.fromMesh( PlacaA );
+		
+		var PlacaResCSG1 = PlacaGCSG.union(PlacaACSG);
+		var PlacaResCSG2 = PlacaResCSG1.subtract(PlacaPCSG);
+		
+		var MatPlaca = new THREE.MeshStandardMaterial( { color: 0x2E2E2E} );
+		var PlacaRes = THREE.CSG.toMesh(PlacaResCSG2);
+		PlacaRes.material = MatPlaca;
+		MEje.add(PlacaRes);
+		PlacaRes.translateZ(0.2);
+		}
+
+		//Cabina
+		{
+
+		var matCabina = new THREE.MeshStandardMaterial( {color: 0x8A4B08} );
+		var matPuerta = new THREE.MeshStandardMaterial( {color: 0x61210B} );
+		
+		var GeoCabPrin = new THREE.BoxGeometry( 1.3, 0.9, 1.8 );	
+		var CabPri = new THREE.Mesh( GeoCabPrin, Prov );
+		CabPri.translateZ(-1.3);
+		CabPri.translateY(0.4);
+		
+		var GeoCabH = new THREE.BoxGeometry( 1.4, 0.8, 1 );	
+		var CabH = new THREE.Mesh( GeoCabH, Prov );
+		CabH.translateZ(-1);
+		CabH.translateY(0.5);
+		//scene.add(CabH);
+	
+		var GeoCabH2 = new THREE.BoxGeometry( 1.2, 0.5, 0.61 );	
+		var CabH2 = new THREE.Mesh( GeoCabH2, Prov );
+		CabH2.translateZ(-1.8);
+		CabH2.translateY(0.65);
+		
+		var GeoCabH3 = new THREE.BoxGeometry( 1.4, 0.1, 2 );	
+		var CabH3 = new THREE.Mesh( GeoCabH3, Prov );
+		CabH3.translateZ(-1.4);
+		CabH3.translateY(0.9);
+
+		
+		var GeoCabSec = new THREE.CylinderGeometry( 0.4, 0.4, 1.5, 18 );
+		var CabSec = new THREE.Mesh( GeoCabSec, Prov );
+		CabSec.rotateOnWorldAxis( y, THREE.Math.degToRad(90) );
+		CabSec.rotateOnWorldAxis( z, THREE.Math.degToRad(90) );
+		CabSec.translateX(2);
+		
+		var CabPriCSG = THREE.CSG.fromMesh( CabPri );
+		var CabSecCSG = THREE.CSG.fromMesh( CabSec );
+		var CabHCSG = THREE.CSG.fromMesh( CabH );
+		var CabHCSG2 = THREE.CSG.fromMesh( CabH2 );
+		var CabHCSG3 = THREE.CSG.fromMesh( CabH3 );
+		
+		var CabResCSG1 = CabPriCSG.subtract(CabHCSG);
+		var CabResCSG11 = CabResCSG1.subtract(CabHCSG2);
+		var CabResCSG2 = CabResCSG11.subtract(CabSecCSG);
+		
+		
+		var puerta1CSGH = CabHCSG.intersect(CabPriCSG);
+		var puerta1CSG =  CabHCSG.subtract(puerta1CSGH);
+		
+		var puerta2CSGH = CabHCSG2.intersect(CabPriCSG);
+		var puerta2CSG =  CabHCSG2.subtract(puerta2CSGH);
+		
+		
+		var puertaUCSG =  puerta1CSG.union(puerta2CSG);
+		
+		var puertaFCSG = puertaUCSG.subtract(CabHCSG3);
+		
+		var Cab = THREE.CSG.toMesh(CabResCSG2);
+		var puerta1 = THREE.CSG.toMesh(puertaFCSG);
+		
+		Cab.material = matCabina;
+		puerta1.material = matPuerta;
+		Cab.translateZ(0.38);
+		puerta1.translateZ(0.38);
+		Global.add(Cab);
+		Global.add(puerta1);
+		
+		
+		var MatPared  = new THREE.MeshStandardMaterial( {color: 0x424242} );
+		var GeoPared = new THREE.BoxGeometry( 1.28, 0.7, 0.05 );
+		var Pared = new THREE.Mesh( GeoPared, MatPared );
+		Pared.translateZ(-1.8);
+		Pared.translateY(1.1);
+		
+		var GeoParedCut = new THREE.BoxGeometry( 0.35, 0.25, 0.1 );
+		var ParedCut = new THREE.Mesh( GeoParedCut, Prov );
+		ParedCut.translateZ(-1.8);
+		ParedCut.translateY(1.1);
+		ParedCut.translateX(0.25);
+		
+		var ParedCut2 = new THREE.Mesh( GeoParedCut, Prov );
+		ParedCut2.translateZ(-1.8);
+		ParedCut2.translateY(1.1);
+		ParedCut2.translateX(-0.25);
+		
+		var ParedCSG = THREE.CSG.fromMesh( Pared );
+		var ParedCutCSG = THREE.CSG.fromMesh( ParedCut );
+		var ParedCutCSG2 = THREE.CSG.fromMesh( ParedCut2 );
+		
+		var ParedRes1 =  ParedCutCSG.union( ParedCutCSG2 );	
+		var ParedRes2 =  ParedCSG.subtract( ParedRes1 );	
+		
+		var ParedFinal = THREE.CSG.toMesh( ParedRes2 );
+		
+		ParedFinal.material = MatPared;
+		Global.add(ParedFinal);
+		}
+
+		//Techo
+		{
+		var MatBarra = new THREE.MeshStandardMaterial( {color: 0x151515} );	
+		var MatTecho = new THREE.MeshStandardMaterial( {color: 0x848484} );			
+		var GeoBarra = new THREE.BoxGeometry( 0.04, 0.67, 0.04 );
+		var bar = new Array(6);
+		bar[0] = new THREE.Mesh( GeoBarra, MatBarra );
+		bar[0].translateX(0.6);
+		bar[0].translateY(1.1);
+		bar[0].translateZ(-0.08);
+		Global.add(bar[0]);
+
+		bar[1] = new THREE.Mesh( GeoBarra, MatBarra );
+		bar[1].translateX(-0.6);
+		bar[1].translateY(1.1);
+		bar[1].translateZ(-0.08);
+		Global.add(bar[1]);
+		
+		bar[2] = new THREE.Mesh( GeoBarra, MatBarra );
+		bar[2].translateX(0.6);
+		bar[2].translateY(1.1);
+		bar[2].translateZ(-1.75);
+		Global.add(bar[2]);
+		
+		bar[3] = new THREE.Mesh( GeoBarra, MatBarra );
+		bar[3].translateX(-0.6);
+		bar[3].translateY(1.1);
+		bar[3].translateZ(-1.75);
+		Global.add(bar[3]);
+		
+		bar[4] = new THREE.Mesh( GeoBarra, MatBarra );
+		bar[4].translateX(-0.624);
+		bar[4].translateY(1.1);
+		bar[4].translateZ(-1.15);
+		Global.add(bar[4]);
+		
+		bar[5] = new THREE.Mesh( GeoBarra, MatBarra );
+		bar[5].translateX(0.624);
+		bar[5].translateY(1.1);
+		bar[5].translateZ(-1.15);
+		Global.add(bar[5]);
+		
+		
+		var GeoTecPrin = new THREE.SphereGeometry( 1, 10, 10 );
+		var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+		var TecPrin = new THREE.Mesh( GeoTecPrin, material );
+		
+		var GeoTecSec = new THREE.BoxGeometry( 2, 1.5, 2 );
+		var material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+		var TecSec = new THREE.Mesh( GeoTecSec, material );
+		TecSec.translateY(-0.27);
+		
+		var GeoTecSec2 = new THREE.BoxGeometry( 2, 2, 0.5 );
+		var material = new THREE.MeshBasicMaterial( {color: 0x00fff0} );
+		var TecSec2 = new THREE.Mesh( GeoTecSec2, material );
+		TecSec2.translateZ(-0.8);
+		
+		var GeCSG = THREE.CSG.fromMesh( TecPrin );
+		var GeoTecSecCSG = THREE.CSG.fromMesh( TecSec );
+		var GeoTecSec2CSG = THREE.CSG.fromMesh( TecSec2 );
+		
+		var Res1 = GeCSG.subtract( GeoTecSecCSG );
+		var Res2 = Res1.subtract( GeoTecSec2CSG );
+		
+		var Tejado = THREE.CSG.toMesh(Res2);
+		Tejado.scale.set(1,0.7,1.6);
+		Tejado.position.set(0,1.1,-1);
+		Tejado.material = MatTecho;
+		
+		Global.add(Tejado);
+		}
+		
+		//Bumpers
+		{
+		var BumperColor = new THREE.MeshStandardMaterial( { color: 0x2E2E2E} );	
+		var geoFloor = new THREE.BoxGeometry( 0.3, 0.1, 1.3 );
+		var matFloor = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+		var Floor = new THREE.Mesh( geoFloor, matFloor );
+		Floor.translateZ(-0.67);
+		
+		var geoBump1 = new THREE.SphereGeometry( 0.75, 20, 20 );
+		var matBumpl = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+		var Bump1 = new THREE.Mesh( geoBump1, matBumpl );
+		Bump1.translateZ(0.7);
+		
+		var geoBump2 = new THREE.SphereGeometry( 0.7, 20, 20 );
+		var matBump2 = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+		var Bump2 = new THREE.Mesh( geoBump2, matBump2 );
+		Bump2.translateZ(0.7);
+		Bump2.translateY(-0.1);
+		
+		
+		var Bump1CSG = THREE.CSG.fromMesh( Bump1 );
+		var Bump2CSG = THREE.CSG.fromMesh( Bump2 );
+		var BumpR1 = Bump1CSG.subtract( Bump2CSG );
+				
+		var geoBumpCut1 = new THREE.BoxGeometry( 0.6, 1.7, 1.5 );
+		var matBumpCut1 = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+		var BumpCut1 = new THREE.Mesh( geoBumpCut1, matBumpCut1 );
+		BumpCut1.translateZ(0.7);
+		BumpCut1.translateX(0.45);
+		
+		var geoBumpCut2 = new THREE.BoxGeometry( 0.6, 1.7, 1.5 );
+		var matBumpCut2 = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+		var BumpCut2 = new THREE.Mesh( geoBumpCut2, matBumpCut2 );
+		BumpCut2.translateZ(0.7);
+		BumpCut2.translateX(-0.45);
+		
+		var geoBumpCut3 = new THREE.BoxGeometry( 0.6, 0.6, 1 );
+		var matBumpCut3 = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+		var BumpCut3 = new THREE.Mesh( geoBumpCut3, matBumpCut3 );
+		BumpCut3.translateZ(1);
+		BumpCut3.translateY(-0.2);
+		
+		var geoBumpCut4 = new THREE.BoxGeometry( 0.6, 0.4, 1 );
+		var matBumpCut4 = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+		var BumpCut4 = new THREE.Mesh( geoBumpCut4, matBumpCut4 );
+		BumpCut4.translateZ(0.4);
+		BumpCut4.translateY(-0.25);
+		
+		var Cut1CSG = THREE.CSG.fromMesh( BumpCut1 );
+		var Cut2CSG = THREE.CSG.fromMesh( BumpCut2 );
+		var Cut3CSG = THREE.CSG.fromMesh( BumpCut3 );
+		var Cut4CSG = THREE.CSG.fromMesh( BumpCut4 );
+		
+		var CutR1 = Cut1CSG.union( Cut2CSG );
+		var CutR2 = CutR1.union( Cut3CSG );
+		var CutR3 = CutR2.union( Cut4CSG );
+		
+		var BumpDel	= BumpR1.subtract(CutR3);
+		
+		var BumpCir = THREE.CSG.toMesh( BumpDel );
+		var BumpCir2 = THREE.CSG.toMesh( BumpDel );
+		BumpCir2.rotateOnWorldAxis( y, THREE.Math.degToRad(180) );
+		BumpCir2.translateZ(1.3);
+		
+		
+		var FinalBCSG1 = THREE.CSG.fromMesh( BumpCir );
+		var FinalBCSG2 = THREE.CSG.fromMesh( BumpCir2 );
+		var FinalBCSG3 = THREE.CSG.fromMesh( Floor );
+		
+		
+		var FinalB1 = FinalBCSG1.union( FinalBCSG2 );
+		var FinalB = FinalB1.union( FinalBCSG3 );
+		
+		var BumpFinal = THREE.CSG.toMesh( FinalB);
+		var BumpFina2 = THREE.CSG.toMesh( FinalB);
+		
+		BumpFinal.material = BumperColor;
+		BumpFina2.material = BumperColor;
+		
+		Global.add(BumpFinal);
+		Global.add(BumpFina2);
+		
+		BumpFinal.scale.set(0.95,0.95,0.9);
+		BumpFinal.translateX(0.8);
+		
+		BumpFina2.scale.set(0.95,0.95,0.9);
+		BumpFina2.translateX(-0.8);
+		}
+
+		//Uni
+		{
+		var geoUniones2 = new THREE.CylinderGeometry( 0.05, 0.05, 0.4, 10 );
+		var geoUniones = new THREE.CylinderGeometry( 0.05, 0.05, 1.4, 10 );
+		var matUniones = new THREE.MeshStandardMaterial( {color: 0x3B0B0B} );
+		var Uniones = new THREE.Mesh( geoUniones, matUniones );
+		var Uniones2 = new THREE.Mesh( geoUniones, matUniones );
+		var Uniones3 = new THREE.Mesh( geoUniones2, matUniones );
+		Global.add( Uniones );
+		Global.add( Uniones2 );
+		Global.add( Uniones3 );
+		Uniones.translateZ(0.6);
+		Uniones.rotateOnWorldAxis( x, THREE.Math.degToRad(90) );
+		Uniones.rotateOnWorldAxis( y, THREE.Math.degToRad(90) );
+		Uniones2.translateZ(-1.8);
+		Uniones2.rotateOnWorldAxis( x, THREE.Math.degToRad(90) );
+		Uniones2.rotateOnWorldAxis( y, THREE.Math.degToRad(90) );		
+		Uniones3.translateZ(-1.75);
+		Uniones3.translateY(0.16);
+		}
+	{
+	
+
+
+	}
+
+	
+			camera.position.x = 2;
+			camera.position.y = 2;
+		  	camera.position.z = 5;
+			scene.add( Global );
+			camera.lookAt( origin );
+		}
+		function animate(){
+			render();
+			requestAnimationFrame( animate );
+
+			
+		}
+		function render(){
+		var dtime = Date.now()-startTime;
+		var tx=0, ty=0, tz=0, s=1;
+		
+		
+		var tx=0, ty=0, tz=0;	
+		var sc = 1;			
+		var theta=0;		
+		var sigma=0;		
+		
+		if(thetaSum>=60*Math.PI/180)
+			positivo = false;
+		if(thetaSum<=-60*Math.PI/180)
+			positivo = true;
+		
+		if(zArrow) {
+			tx=0; ty=0; tz=.1;
+			if(positivo)
+				theta = .1;
+			else
+				theta = -.1;
+		}
+		if(xArrow) {
+			tx=0; ty=0; tz=-.1;
+			if(positivo)
+				theta = .1;
+			else
+				theta = -.1;
+		}
+		thetaSum+=theta;
+		
+		if(upArrow)
+			sigma = -.1;
+		if(downArrow)
+			sigma = .1;
+		
+		//MATRIZ DE TRASLACIÓN
+		var t = new THREE.Matrix4();
+		t.set( 	1, 0, 0, tx,
+				0, 1, 0, ty, 
+				0, 0, 1, tz,
+				0, 0, 0, 1	);
+		
+		Global.matrix.multiply(t); 	//APLICAR LA TRASLACIÓN A NIVEL LOCAL
+		
+		//ROTACIONES
+		var ct1 = Math.cos(theta);
+		var ct2 = Math.cos(-theta);
+		var cs = Math.cos(sigma);
+		var st1 = Math.sin(theta);
+		var st2 = Math.sin(-theta);
+		var ss = Math.sin(sigma);
+		var r = new THREE.Matrix4();
+
+		//MATRIZ DE ROTACIÓN EN EJE Y
+		r.set( 	   cs,  0, ss, 0,
+					0,  1,  0, 0, 
+				  -ss,  0, cs, 0,
+					0,  0,  0, 1 );
+
+		
+		var tempMatrix = new THREE.Matrix4();
+		tempMatrix.copyPosition( Global.matrix );
+		Global.applyMatrix( new THREE.Matrix4().getInverse(tempMatrix) );
+		Global.applyMatrix(r);
+		Global.applyMatrix( tempMatrix );	
+		
+		Global.elementsNeedUpdate = true;
+		renderer.render( scene, camera );
+		}
+    </script>
+  </body>
+</html>
